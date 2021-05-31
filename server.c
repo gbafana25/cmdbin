@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -7,28 +8,44 @@
 #include <sys/poll.h>
 
 int main() {
-	int serv;
+	int fds[20];
 	int opt = 1;
-	struct sockaddr_in serv_st;
+	int client_num = 1;
+	struct sockaddr_in conns[20];
 	struct pollfd afd[20];
 	char data[1024];
+	char *msg = "test";
 	
-	serv = socket(AF_INET, SOCK_STREAM, 0);
-	setsockopt(serv, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
-	ioctl(serv, FIONBIO, &opt);
+	fds[0] = socket(AF_INET, SOCK_STREAM, 0);
+	setsockopt(fds[0], SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
+	ioctl(fds[0], FIONBIO, &opt);
 
-	serv_st.sin_family = AF_INET;
-	serv_st.sin_port = htons(5678);
-	serv_st.sin_addr.s_addr = htonl(INADDR_ANY);
+	conns[0].sin_family = AF_INET;
+	conns[0].sin_port = htons(5678);
+	conns[0].sin_addr.s_addr = htonl(INADDR_ANY);
 
-	bind(serv, (struct sockaddr *) &serv_st, sizeof(serv_st));
-	listen(serv, 20);
+	bind(fds[0], (struct sockaddr *) &conns[0], sizeof(conns[0]));
+	listen(fds[0], 20);
 	
-	afd[0].fd = serv;
-	afd[0].events = POLL_IN;
-	do {
-		poll(afd, 1, 3 * 60 * 1000);
-		
+	memset(&afd, 0, sizeof(afd));
+	afd[0].fd = fds[0];
+	afd[0].events = POLLIN;
+	while (1) {
+		poll(afd, 20, -1);
+		int client;
+		for(int i = 0; i < client_num; i++) {
+			if((afd[i].revents&POLLIN) == POLLIN) {
+			 	if (afd[i].revents&POLLIN) {
+					client = accept(fds[0], (struct sockaddr *) &conns[i], sizeof(conns[i]));
+					send(client, msg, sizeof(msg), 0);
+					client_num++;
+				/*
+				} else {
+					send(afd[i].fd, msg, sizeof(msg), 0);	
+				*/
+				}
+			}	
+		}
 
 	}	
 
