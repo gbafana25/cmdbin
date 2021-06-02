@@ -14,6 +14,7 @@
 
 #define SHORT_LINK_SIZE 8
 #define RECV_BUF_SIZE 1024
+#define LINK_OFFSET 7
 
 int main() {
 	int server, client;
@@ -22,6 +23,8 @@ int main() {
 	struct sockaddr_in client_addr;
 	char short_link[SHORT_LINK_SIZE], buf[RECV_BUF_SIZE];
 	char *retrieve_req = "GET /f/";
+	char *line;
+	size_t size = 0;
 	memset(&short_link, 0, sizeof(short_link));
 	memset(&buf, 0, sizeof(buf));
 	
@@ -53,7 +56,17 @@ int main() {
 		client = accept(server, (struct sockaddr *) &client_addr, &client_size);
 		recv(client, buf, sizeof(buf), 0);	
 		if(strncmp(buf, retrieve_req, strlen(retrieve_req)) == 0) {
-			send(client, "test", sizeof(char) * 4, 0);
+			FILE *db;
+			db = fopen("test.db", "r");
+			while(getline(&line, &size, db) != -1) {
+				printf("%s", line);
+				char sh[SHORT_LINK_SIZE];
+				strncpy(sh, buf+LINK_OFFSET, SHORT_LINK_SIZE);
+				if(strncmp(line, sh, SHORT_LINK_SIZE) == 0) {
+					printf("got match");	
+				}
+			}
+			//printf("%s", buf+LINK_OFFSET);
 			close(client);
 			memset(&buf, 0, sizeof(buf));
 		} else {
