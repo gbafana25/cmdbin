@@ -12,14 +12,17 @@
 #include "linkgen.h"
 
 #define SHORT_LINK_SIZE 8
+#define RECV_BUF_SIZE 1024
 
 int main() {
 	int server, client;
 	int opt = 1;
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in client_addr;
-	char short_link[SHORT_LINK_SIZE];
+	char short_link[SHORT_LINK_SIZE], buf[RECV_BUF_SIZE];
+	char *retrieve_req = "GET /f/";
 	memset(&short_link, 0, sizeof(short_link));
+	memset(&buf, 0, sizeof(buf));
 	
 	server = socket(AF_INET, SOCK_STREAM, 0);
 	if(server == -1) {
@@ -47,11 +50,22 @@ int main() {
 	socklen_t client_size = sizeof(serv_addr);
 	while (1) {
 		client = accept(server, (struct sockaddr *) &client_addr, &client_size);
-		make_short_link(SHORT_LINK_SIZE, short_link);
-		write_link(short_link);
-		send(client, short_link, strlen(short_link), 0);
-		close(client);
-		memset(&short_link, 0, sizeof(short_link));
+		recv(client, buf, sizeof(buf), 0);	
+		if(strncmp(buf, retrieve_req, strlen(retrieve_req)) == 0) {
+			send(client, "test", sizeof(char) * 4, 0);
+			close(client);
+			memset(&buf, 0, sizeof(buf));
+		} else {
+			for(int i = 0; i < strlen(buf); i++) {
+				printf("%c", buf[i]);
+			}
+			printf("\n");
+			make_short_link(SHORT_LINK_SIZE, short_link);
+			write_link(short_link);
+			close(client);
+			memset(&buf, 0, sizeof(buf));
+			memset(&short_link, 0, sizeof(short_link));
+		}
 
 	}	
 
