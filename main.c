@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <sys/poll.h>
 #include <stddef.h>
+#include <sys/stat.h>
 
 #include "database.h"
 #include "linkgen.h"
@@ -56,15 +57,20 @@ int main() {
 			close(client);
 			memset(&buf, 0, sizeof(buf));
 		} else {
-			for(int i = 0; i < strlen(buf); i++) {
-				printf("%c", buf[i]);
-			}
-			printf("\n");
+			mkdir("pastes", S_IRWXU);
+			char fullpath[15]; 
 			make_short_link(SHORT_LINK_SIZE, short_link);
+			strncat((char * restrict) &fullpath, "pastes/", 7);
+			strncat((char * restrict) &fullpath, short_link, strlen(short_link));
 			write_link(short_link);
+			FILE *paste;
+			paste = fopen(fullpath, "w+");
+			fprintf(paste, "%s\n", buf);
+			fclose(paste);
 			close(client);
 			memset(&buf, 0, sizeof(buf));
 			memset(&short_link, 0, sizeof(short_link));
+			memset(&fullpath, 0, sizeof(fullpath));
 		}
 
 	}	
