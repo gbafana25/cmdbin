@@ -21,8 +21,7 @@ int main() {
 	int opt = 1;
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in client_addr;
-	char short_link[SHORT_LINK_SIZE], buf[RECV_BUF_SIZE];
-	char sendbuf[RECV_BUF_SIZE];
+	char short_link[SHORT_LINK_SIZE], buf[RECV_BUF_SIZE], sendbuf[RECV_BUF_SIZE];
 	char *retrieve_req = "GET /f/";
 	char *line;
 	size_t size = 0;
@@ -89,6 +88,8 @@ int main() {
 		} else {
 			mkdir("pastes", S_IRWXU);
 			char fullpath[15]; 
+			memset(&short_link, 0, sizeof(short_link));
+			memset(&fullpath, 0, sizeof(fullpath));
 			make_short_link(SHORT_LINK_SIZE, short_link);
 			strncat((char * restrict) &fullpath, "pastes/", 7);
 			strncat((char * restrict) &fullpath, short_link, strlen(short_link));
@@ -97,6 +98,7 @@ int main() {
 			paste = fopen(fullpath, "w+");
 			fprintf(paste, "%s\n", buf);
 			fclose(paste);
+			send(client, short_link, strlen(short_link), 0);
 			close(client);
 			memset(&buf, 0, sizeof(buf));
 			memset(&short_link, 0, sizeof(short_link));
