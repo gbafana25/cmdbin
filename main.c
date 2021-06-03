@@ -22,6 +22,7 @@ int main() {
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in client_addr;
 	char short_link[SHORT_LINK_SIZE], buf[RECV_BUF_SIZE];
+	char sendbuf[RECV_BUF_SIZE];
 	char *retrieve_req = "GET /f/";
 	char *line;
 	size_t size = 0;
@@ -55,6 +56,7 @@ int main() {
 	while (1) {
 		client = accept(server, (struct sockaddr *) &client_addr, &client_size);
 		recv(client, buf, sizeof(buf), 0);	
+		memset(&sendbuf, 0, sizeof(sendbuf));
 		if(strncmp(buf, retrieve_req, strlen(retrieve_req)) == 0) {
 			FILE *db;
 			db = fopen("test.db", "r");
@@ -63,7 +65,22 @@ int main() {
 				char sh[SHORT_LINK_SIZE];
 				strncpy(sh, buf+LINK_OFFSET, SHORT_LINK_SIZE);
 				if(strncmp(line, sh, SHORT_LINK_SIZE) == 0) {
-					printf("got match");	
+					printf("got match\n");	
+					char *path[15];
+					memset(&path, 0, sizeof(path));
+					strncat((char * restrict) &path, "pastes/", 7);
+					strncat((char * restrict) &path, line, strlen(line) - 1);
+					//printf("%s", path);
+					char *output;
+					memset(&output, 0, sizeof(output));
+					FILE *val;
+					val = fopen(path, "r");
+					while(getline(&output, &size, val) != -1) {
+						//printf("%s", output);
+						strncat((char * restrict) &sendbuf, output, strlen(output));
+					}
+					send(client, sendbuf, sizeof(sendbuf), 0);
+					
 				}
 			}
 			//printf("%s", buf+LINK_OFFSET);
