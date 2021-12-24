@@ -21,7 +21,9 @@ int main() {
 	int opt = 1;
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in client_addr;
-	char short_link[SHORT_LINK_SIZE], buf[RECV_BUF_SIZE], sendbuf[RECV_BUF_SIZE];
+	char *response_line = "HTTP/1.1 200 OK\n";
+	size_t ok_resp_size = strlen(response_line) * sizeof(char);
+	char short_link[SHORT_LINK_SIZE], buf[RECV_BUF_SIZE], sendbuf[RECV_BUF_SIZE + ok_resp_size];
 	char *retrieve_req = "GET /f/";
 	char *line;
 	size_t size = 0;
@@ -74,6 +76,7 @@ int main() {
 					memset(&output, 0, sizeof(output));
 					FILE *val;
 					val = fopen(path, "r");
+					strncat((char * restrict) &sendbuf, response_line, strlen(response_line));
 					while(getline(&output, &size, val) != -1) {
 						//printf("%s", output);
 						strncat((char * restrict) &sendbuf, output, strlen(output));
